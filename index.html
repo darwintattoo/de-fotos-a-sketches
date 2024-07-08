@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-/**
- * SketchCreator Component
- * 
- * Este componente permite cargar una imagen y convertirla en un sketch
- * con varios parámetros ajustables para personalizar el resultado.
- */
 const SketchCreator = () => {
-  // Estados para la imagen y los parámetros de ajuste
   const [originalImage, setOriginalImage] = useState(null);
   const [edgeStrength, setEdgeStrength] = useState(50);
   const [edgeSensitivity, setEdgeSensitivity] = useState(20);
@@ -15,11 +8,9 @@ const SketchCreator = () => {
   const [threshold, setThreshold] = useState(128);
   const [invert, setInvert] = useState(false);
 
-  // Referencias a los elementos canvas
   const originalCanvasRef = useRef(null);
   const sketchCanvasRef = useRef(null);
 
-  // Efecto para cargar y procesar la imagen cuando se selecciona
   useEffect(() => {
     if (originalImage) {
       const img = new Image();
@@ -39,17 +30,12 @@ const SketchCreator = () => {
     }
   }, [originalImage]);
 
-  // Efecto para actualizar el sketch cuando cambian los parámetros
   useEffect(() => {
     if (originalImage) {
       updateEffect();
     }
   }, [edgeStrength, edgeSensitivity, fineDetail, threshold, invert]);
 
-  /**
-   * Maneja la carga de una nueva imagen
-   * @param {Event} e - Evento de cambio del input de archivo
-   */
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     const reader = new FileReader();
@@ -59,12 +45,6 @@ const SketchCreator = () => {
     reader.readAsDataURL(file);
   };
 
-  /**
-   * Redimensiona una imagen manteniendo su proporción
-   * @param {HTMLImageElement} img - Imagen a redimensionar
-   * @param {number} maxDim - Dimensión máxima (ancho o alto)
-   * @returns {HTMLCanvasElement} Canvas con la imagen redimensionada
-   */
   const resizeImage = (img, maxDim) => {
     const canvas = document.createElement('canvas');
     let width = img.width;
@@ -88,9 +68,6 @@ const SketchCreator = () => {
     return canvas;
   };
 
-  /**
-   * Actualiza el efecto de sketch basado en los parámetros actuales
-   */
   const updateEffect = () => {
     if (!originalCanvasRef.current || !sketchCanvasRef.current) return;
 
@@ -110,18 +87,10 @@ const SketchCreator = () => {
     sketchCtx.putImageData(sketchData, 0, 0);
   };
 
-  /**
-   * Crea el efecto de sketch detallado
-   * @param {ImageData} imageData - Datos de la imagen original
-   * @param {number} edgeStrength - Fuerza de los bordes
-   * @param {number} edgeSensitivity - Sensibilidad de detección de bordes
-   * @param {number} fineDetail - Nivel de detalle fino
-   * @param {number} threshold - Umbral para binarización
-   * @param {boolean} invert - Si se debe invertir el resultado
-   * @returns {ImageData} Datos de la imagen procesada
-   */
   const createDetailedSketchEffect = (imageData, edgeStrength, edgeSensitivity, fineDetail, threshold, invert) => {
-    const { width, height, data } = imageData;
+    const width = imageData.width;
+    const height = imageData.height;
+    const data = imageData.data;
     const result = new ImageData(new Uint8ClampedArray(data), width, height);
     const resultData = result.data;
 
@@ -144,15 +113,6 @@ const SketchCreator = () => {
     return result;
   };
 
-  /**
-   * Detecta los bordes en una imagen
-   * @param {Uint8ClampedArray} data - Datos de la imagen en escala de grises
-   * @param {number} width - Ancho de la imagen
-   * @param {number} height - Alto de la imagen
-   * @param {number} strength - Fuerza de los bordes
-   * @param {number} sensitivity - Sensibilidad de detección
-   * @returns {Uint8ClampedArray} Mapa de bordes detectados
-   */
   const detectEdges = (data, width, height, strength, sensitivity) => {
     const result = new Uint8ClampedArray(data.length);
     const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
@@ -175,14 +135,6 @@ const SketchCreator = () => {
     return result;
   };
 
-  /**
-   * Aplica un efecto de detalle fino al mapa de bordes
-   * @param {Uint8ClampedArray} edges - Mapa de bordes
-   * @param {Uint8ClampedArray} original - Imagen original en escala de grises
-   * @param {number} width - Ancho de la imagen
-   * @param {number} height - Alto de la imagen
-   * @param {number} amount - Cantidad de detalle fino a aplicar
-   */
   const applyFineDetail = (edges, original, width, height, amount) => {
     for (let i = 0; i < edges.length; i++) {
       edges[i] = Math.max(edges[i], (255 - original[i]) * amount);
