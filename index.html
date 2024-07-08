@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Darwin Prueba de Foto Realista a Sketch - Detalle Mejorado</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        h1, h2 { text-align: center; }
+        .canvas-container {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .canvas-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .control {
+            width: 200px;
+        }
+        label { display: block; margin-bottom: 5px; }
+        input[type="range"] { width: 100%; }
+    </style>
+</head>
+<body>
+    <h1>Darwin Prueba de Foto Realista a Sketch - Detalle Mejorado</h1>
+    <input type="file" id="imageLoader" accept="image/*">
+    <div class="canvas-container">
+        <div class="canvas-item">
+            <h2>Original</h2>
+            <canvas id="original"></canvas>
+        </div>
+        <div class="canvas-item">
+            <h2>Sketch</h2>
+            <canvas id="sketch"></canvas>
+        </div>
+    </div>
+    <div class="controls">
+        <div class="control">
+            <label for="edgeStrength">Fuerza de Bordes: <span id="edgeStrengthValue">70</span></label>
+            <input type="range" id="edgeStrength" min="0" max="100" value="70">
+        </div>
+        <div class="control">
+            <label for="edgeSensitivity">Sensibilidad de Bordes: <span id="edgeSensitivityValue">20</span></label>
+            <input type="range" id="edgeSensitivity" min="0" max="100" value="20">
+        </div>
+        <div class="control">
+            <label for="smoothing">Suavizado: <span id="smoothingValue">2</span></label>
+            <input type="range" id="smoothing" min="0" max="10" value="2">
+        </div>
+        <div class="control">
+            <label for="fineDetail">Detalle Fino: <span id="fineDetailValue">50</span></label>
+            <input type="range" id="fineDetail" min="0" max="100" value="50">
+        </div>
+        <div class="control">
+            <label for="threshold">Umbral: <span id="thresholdValue">128</span></label>
+            <input type="range" id="threshold" min="0" max="255" value="128">
+        </div>
+        <div class="control">
+            <label for="invert">Invertir Colores</label>
+            <input type="checkbox" id="invert">
+        </div>
+    </div>
+    <script>
+        const canvases = {
+            original: document.getElementById('original'),
+            sketch: document.getElementById('sketch')
+        };
+        const ctxs = Object.fromEntries(Object.entries(canvases).map(([k, v]) => [k, v.getContext('2d')]));
+
+        const imageLoader = document.getElementById('imageLoader');
+        const edgeStrengthSlider = document.getElementById('edgeStrength');
+        const edgeSensitivitySlider = document.getElementById('edgeSensitivity');
+        const smoothingSlider = document.getElementById('smoothing');
+        const fineDetailSlider = document.getElementById('fineDetail');
+        const thresholdSlider = document.getElementById('threshold');
+        const invertCheckbox = document.getElementById('invert');
+
+        let originalImage;
+
+        imageLoader.addEventListener('change', handleImage, false);
+        [edgeStrengthSlider, edgeSensitivitySlider, smoothingSlider, fineDetailSlider, thresholdSlider, invertCheckbox].forEach(control => {
+            control.addEventListener('input', updateEffect);
+        });
+
+        function handleImage(e) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                originalImage = new Image();
+                originalImage.onload = function() {
+                    console.log("Imagen cargada, dimensiones:", originalImage.width, "x", originalImage.height);
+                    const resizedImage = resizeImage(originalImage, 1000);
+                    Object.values(canvases).forEach(canvas => {
+                        canvas.width = resizedImage.width;
+                        canvas.height = resizedImage.height;
+                    });
+                    ctxs.original.drawImage(resizedImage, 0, 0);
+                    console.log("Imagen dibujada en el canvas original");
+                    updateEffect();
+                }
+                originalImage.src = event.target.result;
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+
+        function resizeImage(img, maxDim) {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+                if (width > maxDim) {
+                    height *= maxDim / width;
+                    width = maxDim;
+                }
+            } else {
+                if (height > maxDim) {
+                    width *= maxDim / height;
+                    height = maxDim;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            console.log("Imagen redimensionada a", width, "x", height);
+            return canvas;
+        }
+
+        function updateEffect() {
+            if (!originalImage) return;
+
+            console.log("Actualizando efecto");
+
+            const edgeStrength = parseInt(edgeStrengthSlider.value) / 100;
+            const edgeSensitivity = parseInt(edgeSensitivitySlider.value);
+            const smoothing = parseInt(smoothingSlider.value);
+            const fineDetail = parseInt(fineDetailSlider.value) / 100;
+            const threshold = parseInt(thresholdSlider.value);
+            const invert = invertCheckbox.checked;
+
+            document.getElementById('edgeStrengthValue').textContent = edgeStrengthSlider.value;
+            document.getElementById('edgeSensitivityValue').textContent = edgeSensitivitySlider.value;
+            document.getElementById('smoothingValue').textContent = smoothingSlider.value;
+            document.getElementById('fineDetailValue').textContent = fineDetailSlider.value;
+            document.getElementById('thresholdValue').textContent = thresholdSlider.value;
+
+            const imageData = ctxs.original.getImageData(0, 0, canvases.original.width, canvases.original.height);
+            
+            const sketchData = createDetailedSketchEffect(imageData, edgeStrength, edgeSensitivity, smoothing, fineDetail, threshold, invert);
+            ctxs.sketch.putImageData(sketchData, 0, 0);
+
+            console.log("Efecto de sketch detallado aplicado");
+        }
+
+        function createDetailedSketchEffect(imageData, edgeStrength, edgeSensitivity, smoothing, fineDetail, threshold, invert) {
+            const width = imageData.width;
+            const height = imageData.height;
+            const data = imageData.data;
+            const result = new ImageData(new Uint8ClampedArray(data), width, height);
+            const resultData = result.data;
+
+            // Convertir a escala de grises
+            const grayScale = new Uint8ClampedArray(width * height);
+            for (let i = 0; i < data.length; i += 4) {
+                grayScale[i/4] = (data[i] * 0.3 + data[i+1] * 0.59 + data[i+2] * 0.11);
+            }
+
+            // Aplicar suavizado
+            const smoothed = applySmoothing(grayScale, width, height, smoothing);
+
+            // Detectar bordes
+            const edges = detectEdges(smoothed, width, height, edgeStrength, edgeSensitivity);
+
+            // Aplicar detalle fino
+            applyFineDetail(edges, smoothed, width, height, fineDetail);
+
+            // Aplicar umbral y crear imagen final
+            for (let i = 0; i < edges.length; i++) {
+                let value = edges[i] > threshold ? 0 : 255;
+                if (invert) value = 255 - value;
+                const idx = i * 4;
+                resultData[idx] = resultData[idx + 1] = resultData[idx + 2] = value;
+                resultData[idx + 3] = 255;
+            }
+
+            return result;
+        }
+
+        function applySmoothing(data, width, height, radius) {
+            const result = new Uint8ClampedArray(data.length);
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let sum = 0;
+                    let count = 0;
+                    for (let dy = -radius; dy <= radius; dy++) {
+                        for (let dx = -radius; dx <= radius; dx++) {
+                            const nx = x + dx;
+                            const ny = y + dy;
+                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                sum += data[ny * width + nx];
+                                count++;
+                            }
+                        }
+                    }
+                    result[y * width + x] = sum / count;
+                }
+            }
+            return result;
+        }
+
+        function detectEdges(data, width, height, strength, sensitivity) {
+            const result = new Uint8ClampedArray(data.length);
+            const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+            const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    let gx = 0, gy = 0;
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const idx = (y + ky) * width + (x + kx);
+                            gx += data[idx] * sobelX[(ky + 1) * 3 + (kx + 1)];
+                            gy += data[idx] * sobelY[(ky + 1) * 3 + (kx + 1)];
+                        }
+                    }
+                    const g = Math.sqrt(gx * gx + gy * gy) * strength;
+                    result[y * width + x] = g > sensitivity ? g : 0;
+                }
+            }
+            return result;
+        }
+
+        function applyFineDetail(edges, original, width, height, amount) {
+            for (let i = 0; i < edges.length; i++) {
+                edges[i] = Math.max(edges[i], (255 - original[i]) * amount);
+            }
+        }
+    </script>
+</body>
+</html>
